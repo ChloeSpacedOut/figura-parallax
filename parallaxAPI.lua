@@ -20,22 +20,25 @@ parallax.modelParent:setPivot(0,17.05,0)
 
 --#REGION background functions
 ---@class parallaxBackground
+---@field ID string Background's ID.
 ---@field root ModelPart Background's root parent.
 ---@field parent ModelPart Background's parent.
 ---@field sprite SpriteTask Background's sprite task.
----@field texture Texture Backgrond's textures.
----@field offset number Background's offset away from the screen.
----@field rotateAmount number Background's rotation factor. How much it rotates from the mouse.
----@field moveAmount number Background's movement factor. How much it moves from the mouse.
----@field uvScale number Background's UV size. Independant of scale.
----@field scale number  Background's total size. Independant of UV.
 ---@field update function Updates the background sprite, applying texture, offset, scale, etc.
+---@field remove function Removes the background.
+---@field texture Texture The backgrond's texture.	
+---@field rotateAmount number The background's rotation factor. How much it rotates from the mouse. Updates automatically. Default is 20.
+---@field moveAmount number The background's movement factor. How much it moves from the mouse.  Updates automatically. Default is 0.
+---@field offset number The background's offset away from the screen. Default is 5.
+---@field uvScale number The background's UV size. Independent of scale. Default is 1.
+---@field scale number  The background's total size. Independent of UV. Default is 1000.
 ---@field new function *INTERNAL* Returns a new background. Doesn't generate background model parts.
 local parallaxBackground = {}
 parallaxBackground.__index = parallaxBackground
 
-function parallaxBackground:new(root,parent,sprite,texture,rotateAmount,moveAmount,offset,uvScale,scale)
+function parallaxBackground:new(ID,root,parent,sprite,texture,rotateAmount,moveAmount,offset,uvScale,scale)
 	local self = setmetatable({},parallaxBackground)
+	self.ID = ID
 	self.root = root
 	self.parent = parent
 	self.sprite = sprite
@@ -71,6 +74,11 @@ function parallaxBackground:update()
 	return self
 end
 
+function parallaxBackground:remove()
+	self.root:remove()
+	parallax.backgrounds[self.ID] = nil
+end
+
 ---@param ID string
 ---@param texture Texture
 ---@param rotateAmount number
@@ -90,7 +98,7 @@ function parallax.newBackground(ID,texture,rotateAmount,moveAmount,offset,uvScal
 	local parent = root:newPart("parent")
 	local sprite = parent:newSprite(ID)
 
-	local parallaxBackground = parallaxBackground:new(root,parent,sprite,texture,rotateAmount,moveAmount,offset,uvScale,scale)
+	local parallaxBackground = parallaxBackground:new(ID,root,parent,sprite,texture,rotateAmount,moveAmount,offset,uvScale,scale)
 	parallax.backgrounds[ID] = parallaxBackground
 	parallaxBackground:update()
 	return parallaxBackground
@@ -99,17 +107,20 @@ end
 
 --#REGION model functions
 ---@class parallaxModel
+---@field ID string Background's ID.
 ---@field origional ModelPart The model part provided when the paralaxModel was created.
 ---@field parent ModelPart Model's parent.
 ---@field roll ModelPart The model. Used in model roll.
----@field rotateAmount number Model's rotation factor. How much it rotates from the mouse.
----@field moveAmount number Model's movement factor. How much in moves from the mouse.
----@field offset number Model's offset away from the screen.
+---@field remove function Removes the model.
+---@field rotateAmount number Model's rotation factor. How much it rotates from the mouse. Default is 20.
+---@field moveAmount number Model's movement factor. How much in moves from the mouse. Default is 0.
+---@field offset number Model's offset away from the screen. Default is 100.
 local parallaxModel = {}
 parallaxModel.__index = parallaxModel
 
-function parallaxModel:new(origional,parent,roll,offset,rotateAmount,moveAmount)
+function parallaxModel:new(ID,origional,parent,roll,offset,rotateAmount,moveAmount)
 	local self = setmetatable({},parallaxModel)
+	self.ID = ID
 	self.origional = origional
 	self.parent = parent
 	self.roll = roll
@@ -117,6 +128,12 @@ function parallaxModel:new(origional,parent,roll,offset,rotateAmount,moveAmount)
 	self.rotateAmount = rotateAmount
 	self.moveAmount = moveAmount
 	return self
+end
+
+function parallaxModel:remove()
+	self.origional:setVisible(true)
+	self.parent:remove()
+	parallax.models[self.ID] = nil
 end
 
 ---@param ID string
@@ -133,8 +150,9 @@ function parallax.addModel(ID,model,rotateAmount,moveAmount,offset)
 	parent:addChild(model:copy())
 	parent:getChildren()[1]:setScale(1/math.worldScale)
 	local roll = parent:getChildren()[1]
-	local parallaxModel = parallaxModel:new(model,parent,roll,offset,rotateAmount,moveAmount)
+	local parallaxModel = parallaxModel:new(ID,model,parent,roll,offset,rotateAmount,moveAmount)
 	parallax.models[ID] = parallaxModel
+	return parallaxModel
 end
 --#ENDREGION
 
